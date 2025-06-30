@@ -1,1 +1,0 @@
-gent.print_respon
