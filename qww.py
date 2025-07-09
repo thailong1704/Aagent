@@ -4,6 +4,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 from agno.agent import Agent
 import json
+import os
 from agno.models.ollama import Ollama
 from agno.agent import Agent, AgentKnowledge
 from textwrap import dedent
@@ -45,104 +46,136 @@ taikhoan = input(" nhap tai khoan: ")
 matkhau = input("nhap mat khau: ")
 
 driver = webdriver.Edge()
-driver.get("https://sso.hcmut.edu.vn/cas/login?service=https%3A%2F%2Fmybk.hcmut.edu.vn%2Fapp%2Flogin%2Fcas")
 
-username = driver.find_element(By.NAME, "username")
-username.send_keys(taikhoan)
+try:
+    print("Bắt đầu quá trình đăng nhập và scraping dữ liệu...")
+    driver.get("https://sso.hcmut.edu.vn/cas/login?service=https%3A%2F%2Fmybk.hcmut.edu.vn%2Fapp%2Flogin%2Fcas")
 
-password = driver.find_element(By.NAME, "password")
-password.send_keys(matkhau)
+    username = driver.find_element(By.NAME, "username")
+    username.send_keys(taikhoan)
 
-login = driver.find_element(By.NAME, 'submit')
-login.click()
+    password = driver.find_element(By.NAME, "password")
+    password.send_keys(matkhau)
 
-driver.get("https://mybk.hcmut.edu.vn/app/sinh-vien/ket-qua-hoc-tap/bang-diem-hoc-ky")
-time.sleep(5)
+    login = driver.find_element(By.NAME, 'submit')
+    login.click()
 
-table = driver.find_element(By.ID, "lsKetQuaHocTap")
+    driver.get("https://mybk.hcmut.edu.vn/app/sinh-vien/ket-qua-hoc-tap/bang-diem-hoc-ky")
+    time.sleep(5)
 
-rows = table.find_elements(By.XPATH, ".//tbody/tr")
+    table = driver.find_element(By.ID, "lsKetQuaHocTap")
 
-
-bang_diem = []
-total_gpa =[]
-
-for row in rows:
-    
-    cols = row.find_elements(By.TAG_NAME, "td")
-    if len(cols) >= 8: 
-        mon_hoc = {
-            "ma_mon": cols[0].text.strip(),
-            "ten_mon": cols[1].text.strip(),
-            "tin_chi": cols[2].text.strip(),
-            "diem_tp": cols[3].text.strip(),
-            "diem_so": cols[4].text.strip(),
-            "diem_chu": cols[5].text.strip(),
-            "diem_dat": cols[6].text.strip(),
-            "cap_nhat": cols[7].text.strip()
-        } 
-        bang_diem.append(mon_hoc)
-footer_rows = table.find_elements(By.XPATH, ".//tr[td[@colspan='2']]")
-for footer_row in footer_rows:
- 
-    footer_tds = footer_row.find_elements(By.XPATH, ".//td[@colspan='2']")
-    if len(footer_tds) >= 3:
-        gpa = {
-            "tin_chi": footer_tds[0].text.strip(),     
-            "gpa_hk": footer_tds[1].text.strip(),  
-            "gpa_chung": footer_tds[2].text.strip()
-        }
-        total_gpa.append(gpa)
-
-ket_qua = {
-
-     "bang_diem": bang_diem,
-    "total_gpa": total_gpa
-}
-
-with open("ket_qua.json", "w", encoding="utf-8") as f:
-     json.dump(ket_qua, f, ensure_ascii=False, indent=2)
+    rows = table.find_elements(By.XPATH, ".//tbody/tr")
 
 
+    bang_diem = []
+    total_gpa =[]
 
-knowledge_base = JSONKnowledgeBase(path="ket_qua.json")
+    for row in rows:
+        
+        cols = row.find_elements(By.TAG_NAME, "td")
+        if len(cols) >= 8: 
+            mon_hoc = {
+                "ma_mon": cols[0].text.strip(),
+                "ten_mon": cols[1].text.strip(),
+                "tin_chi": cols[2].text.strip(),
+                "diem_tp": cols[3].text.strip(),
+                "diem_so": cols[4].text.strip(),
+                "diem_chu": cols[5].text.strip(),
+                "diem_dat": cols[6].text.strip(),
+                "cap_nhat": cols[7].text.strip()
+            } 
+            bang_diem.append(mon_hoc)
+    footer_rows = table.find_elements(By.XPATH, ".//tr[td[@colspan='2']]")
+    for footer_row in footer_rows:
+     
+        footer_tds = footer_row.find_elements(By.XPATH, ".//td[@colspan='2']")
+        if len(footer_tds) >= 3:
+            gpa = {
+                "tin_chi": footer_tds[0].text.strip(),     
+                "gpa_hk": footer_tds[1].text.strip(),  
+                "gpa_chung": footer_tds[2].text.strip()
+            }
+            total_gpa.append(gpa)
 
-with open("ket_qua.json", "r", encoding="utf-8") as f:
-    data = json.load(f)
+    # Validate scraped data before writing
+    if not bang_diem:
+        print("Warning: Không có dữ liệu bảng điểm được scrape")
+    if not total_gpa:
+        print("Warning: Không có dữ liệu GPA được scrape")
 
-driver.quit()
+    ket_qua = {
+         "bang_diem": bang_diem,
+        "total_gpa": total_gpa
+    }
 
-agent = Agent(
-    model=Ollama(id="qwen3:8b"),
-    description=dedent("""Bạn là một cố vấn học tập giúp sinh viên phân tích kết quả học tập và đưa ra kế hoạch cải thiện GPA.
-                          Hãy phân tích từ file ket_qua.json từ đó đưa ra cac môn cần cải thiện, ưu tiên học phần và kế hoạch học tập cụ thể."""),
-    instructions=[dedent(f"""
-    Bạn được cung cấp dữ liệu bảng điểm thực tế của sinh viên từ file JSON.
-    
-    QUAN TRỌNG: 
-    - CHỈ sử dụng dữ liệu có trong file ket_qua.json
-    - KHÔNG tự tạo ra mã môn hoặc tên môn không có trong dữ liệu
-    - Phân tích dựa trên điểm số thực tế từ trường "diem_so"
-    - GPA hiện tại: {data['total_gpa'][-1]['gpa_chung'] if data['total_gpa'] else 'N/A'}
-    
-    Nhiệm vụ:
-    1. Phân tích các môn có điểm thấp (< 6.0 hoặc điểm chữ D, F)
-    2. Ưu tiên các môn có tín chỉ cao và điểm thấp
-    3. Đưa ra kế hoạch cụ thể để đạt GPA cao
-    4. Chỉ đề xuất học lại các môn thực sự cần thiết
-    
-    Lưu ý: Nếu một môn đã học lại và cải thiện điểm (có nhiều lần xuất hiện), chỉ tính điểm cao nhất.
-    """)],
-    response_model=PhanTichKetQua,
-    knowledge=knowledge_base,
-   
-    search_knowledge=True,  
-    markdown=True,
-    add_references=True
-    
-)
+    # Write to file with proper buffer flushing
+    with open("ket_qua.json", "w", encoding="utf-8") as f:
+         json.dump(ket_qua, f, ensure_ascii=False, indent=2)
+         f.flush()  # Flush Python buffer
+         os.fsync(f.fileno())  # Flush OS buffer to disk
 
-agent.print_response(
-    "hãy giúp tôi cách cải thiện lên GPA 3.6 " 
-   
-)
+    print(f"Đã ghi dữ liệu thành công: {len(bang_diem)} môn học, {len(total_gpa)} GPA records")
+
+    # Check if file exists and is readable before creating knowledge base
+    if not os.path.exists("ket_qua.json"):
+        raise FileNotFoundError("File ket_qua.json không tồn tại")
+
+    try:
+        knowledge_base = JSONKnowledgeBase(path="ket_qua.json")
+        print("Đã tạo knowledge base thành công")
+    except Exception as e:
+        print(f"Lỗi khi tạo knowledge base: {e}")
+        raise
+
+    try:
+        with open("ket_qua.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        print("Đã đọc dữ liệu từ file thành công")
+    except Exception as e:
+        print(f"Lỗi khi đọc file JSON: {e}")
+        raise
+
+    agent = Agent(
+        model=Ollama(id="qwen3:8b"),
+        description=dedent("""Bạn là một cố vấn học tập giúp sinh viên phân tích kết quả học tập và đưa ra kế hoạch cải thiện GPA.
+                              Hãy phân tích từ file ket_qua.json từ đó đưa ra cac môn cần cải thiện, ưu tiên học phần và kế hoạch học tập cụ thể."""),
+        instructions=[dedent(f"""
+        Bạn được cung cấp dữ liệu bảng điểm thực tế của sinh viên từ file JSON.
+        
+        QUAN TRỌNG: 
+        - CHỈ sử dụng dữ liệu có trong file ket_qua.json
+        - KHÔNG tự tạo ra mã môn hoặc tên môn không có trong dữ liệu
+        - Phân tích dựa trên điểm số thực tế từ trường "diem_so"
+        - GPA hiện tại: {data['total_gpa'][-1]['gpa_chung'] if data['total_gpa'] else 'N/A'}
+        
+        Nhiệm vụ:
+        1. Phân tích các môn có điểm thấp (< 6.0 hoặc điểm chữ D, F)
+        2. Ưu tiên các môn có tín chỉ cao và điểm thấp
+        3. Đưa ra kế hoạch cụ thể để đạt GPA cao
+        4. Chỉ đề xuất học lại các môn thực sự cần thiết
+        
+        Lưu ý: Nếu một môn đã học lại và cải thiện điểm (có nhiều lần xuất hiện), chỉ tính điểm cao nhất.
+        """)],
+        response_model=PhanTichKetQua,
+        knowledge=knowledge_base,
+       
+        search_knowledge=True,  
+        markdown=True,
+        add_references=True
+        
+    )
+
+    agent.print_response(
+        "hãy giúp tôi cách cải thiện lên GPA 3.6 " 
+       
+    )
+    print("Hoàn thành phân tích kết quả học tập")
+
+finally:
+    # Close driver after agent completes or in case of error
+    try:
+        driver.quit()
+        print("Đã đóng driver thành công")
+    except Exception as e:
+        print(f"Lỗi khi đóng driver: {e}")
