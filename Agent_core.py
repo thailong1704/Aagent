@@ -17,6 +17,15 @@ from agno.models.ollama import Ollama
 from agno.knowledge.json import JSONKnowledgeBase
 from agno.tools.reasoning import ReasoningTools
 
+# New imports for enhanced functionality
+try:
+    from Agent_coordinator import GpaCoordinatorAgent
+    from Agent_pdf_reader import PdfTrainingProgramReader
+    ENHANCED_MODE = True
+except ImportError:
+    ENHANCED_MODE = False
+    logging.warning("Enhanced mode disabled - PDF analysis not available")
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,13 +91,18 @@ class PhanTichKetQua(BaseModel):
     du_bao_ket_qua: str = Field(..., description="Dự báo khả năng đạt được mục tiêu")
 
 class GpaAnalyzer:
-    """Class chính để phân tích GPA"""
+    """Class chính để phân tích GPA với tích hợp chương trình đào tạo"""
     
     def __init__(self, output_file: str = "ket_qua.json"):
         self.output_file = output_file
         self.driver = None
         self.knowledge_base = None
         self.agent = None
+        # Enhanced features
+        self.coordinator = None
+        self.pdf_reader = None
+        self.training_program_path = None
+        self.enhanced_analysis = ENHANCED_MODE
         
     def setup_driver(self):
         """Thiết lập webdriver với error handling"""
@@ -244,7 +258,47 @@ class GpaAnalyzer:
             logger.error(f"Lỗi khi lưu dữ liệu: {e}")
             raise
     
-    def setup_agent(self, data: Dict[str, Any]):
+    def setup_enhanced_analysis(self, pdf_path: str = None):
+        """
+        Setup enhanced analysis with training program integration
+        """
+        if not ENHANCED_MODE:
+            logger.warning("Enhanced mode not available")
+            return
+        
+        try:
+            if pdf_path:
+                self.training_program_path = pdf_path
+                logger.info(f"Training program PDF set: {pdf_path}")
+            
+            # Initialize coordinator for enhanced analysis
+            self.coordinator = GpaCoordinatorAgent(output_dir="output")
+            logger.info("Enhanced analysis mode enabled")
+            
+        except Exception as e:
+            logger.error(f"Error setting up enhanced analysis: {e}")
+            self.enhanced_analysis = False
+    
+    def setup_enhanced_analysis(self, pdf_path: str = None):
+        """
+        Setup enhanced analysis with training program integration
+        """
+        if not ENHANCED_MODE:
+            logger.warning("Enhanced mode not available")
+            return
+        
+        try:
+            if pdf_path:
+                self.training_program_path = pdf_path
+                logger.info(f"Training program PDF set: {pdf_path}")
+            
+            # Initialize coordinator for enhanced analysis
+            self.coordinator = GpaCoordinatorAgent(output_dir="output")
+            logger.info("Enhanced analysis mode enabled")
+            
+        except Exception as e:
+            logger.error(f"Error setting up enhanced analysis: {e}")
+            self.enhanced_analysis = False
         """Thiết lập agent với cấu hình nâng cao"""
         try:
             # Tạo knowledge base
@@ -371,6 +425,56 @@ class GpaAnalyzer:
             logger.error(f"Lỗi khi phân tích GPA: {e}")
             raise
     
+    def analyze_with_training_program(self, target_gpa: float = 3.6, 
+                                   remaining_semesters: int = 4) -> Dict[str, Any]:
+        """
+        Enhanced analysis integrating GPA data with training program requirements
+        """
+        if not self.enhanced_analysis or not self.coordinator:
+            logger.warning("Enhanced analysis not available, falling back to standard analysis")
+            return {"standard_analysis": self.analyze_gpa(target_gpa)}
+        
+        try:
+            logger.info("Starting enhanced analysis with training program integration")
+            
+            # Load GPA data
+            self.coordinator.load_gpa_data(self.output_file)
+            
+            # Load training program if PDF path provided
+            if self.training_program_path:
+                self.coordinator.load_training_program(pdf_path=self.training_program_path)
+            else:
+                # Try to load existing training program data
+                try:
+                    self.coordinator.load_training_program()
+                except:
+                    logger.warning("No training program data found, using standard analysis")
+                    return {"standard_analysis": self.analyze_gpa(target_gpa)}
+            
+            # Perform graduation requirements analysis
+            graduation_analysis = self.coordinator.analyze_graduation_requirements()
+            
+            # Setup coordinator agent
+            self.coordinator.setup_coordinator_agent(graduation_analysis)
+            
+            # Generate comprehensive plan
+            comprehensive_plan = self.coordinator.generate_comprehensive_plan(
+                target_gpa=target_gpa, 
+                remaining_semesters=remaining_semesters
+            )
+            
+            logger.info("Enhanced analysis completed successfully")
+            return {
+                "enhanced_analysis": comprehensive_plan,
+                "graduation_analysis": graduation_analysis.dict(),
+                "analysis_type": "comprehensive"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in enhanced analysis: {e}")
+            logger.info("Falling back to standard analysis")
+            return {"standard_analysis": self.analyze_gpa(target_gpa)}
+    
     def cleanup(self):
         """Dọn dẹp tài nguyên"""
         if self.driver:
@@ -394,9 +498,20 @@ def main():
         user_info = app.data.get("user_info", {})
         username = user_info.get("username", "").strip()
         password = user_info.get("password", "").strip()
+        
+        # Lấy thông tin training program từ GUI
+        training_info = app.data.get("training_program", {})
+        pdf_path = training_info.get("pdf_file_path", "").strip()
+        remaining_semesters = training_info.get("remaining_semesters", 4)
 
         if not username or not password:
             raise ValueError("Thiếu tài khoản hoặc mật khẩu từ GUI.")
+        
+        # Setup enhanced analysis if PDF is provided
+        if pdf_path and ENHANCED_MODE:
+            print("Thiết lập phân tích nâng cao với chương trình đào tạo...")
+            analyzer.setup_enhanced_analysis(pdf_path)
+        
         # Nhập mục tiêu GPA
         try:
             target_gpa = float(input("Nhập mục tiêu GPA (mặc định 3.6): ").strip() or "3.6")
@@ -419,21 +534,41 @@ def main():
         print("Đang thiết lập AI agent...")
         analyzer.setup_agent(data)
         
-        print("Đang phân tích GPA và tạo kế hoạch cải thiện...")
-        result = analyzer.analyze_gpa(target_gpa)
-        
-        print("\n" + "="*50)
-        print("KẾT QUẢ PHÂN TÍCH GPA")
-        print("="*50)
-        
-        if isinstance(result, PhanTichKetQua):
-            print(f"GPA hiện tại: {result.gpa_hien_tai:.2f}")
-            print(f"Tổng tín chỉ đã học: {result.tong_tin_chi_da_hoc}")
-            print(f"Mục tiêu GPA: {target_gpa:.2f}")
-            print(f"\nNhận xét: {result.nhan_xet_tong_quan}")
-            print(f"\nDự báo: {result.du_bao_ket_qua}")
+        # Chọn loại phân tích
+        if analyzer.enhanced_analysis and pdf_path:
+            print("Đang thực hiện phân tích tổng hợp với chương trình đào tạo...")
+            result = analyzer.analyze_with_training_program(
+                target_gpa=target_gpa, 
+                remaining_semesters=remaining_semesters
+            )
+            
+            print("\n" + "="*50)
+            print("KẾT QUẢ PHÂN TÍCH TỔNG HỢP")
+            print("="*50)
+            
+            if "enhanced_analysis" in result:
+                print("✓ Đã tích hợp dữ liệu chương trình đào tạo")
+                print("✓ Phân tích yêu cầu tốt nghiệp")
+                print("✓ Lộ trình học tập tối ưu")
+                print(f"\nKết quả chi tiết đã được lưu vào thư mục output/")
+            else:
+                print("Sử dụng phân tích tiêu chuẩn (không có dữ liệu chương trình đào tạo)")
         else:
-            print("Phân tích đã hoàn thành. Vui lòng kiểm tra kết quả.")
+            print("Đang phân tích GPA và tạo kế hoạch cải thiện...")
+            result = analyzer.analyze_gpa(target_gpa)
+            
+            print("\n" + "="*50)
+            print("KẾT QUẢ PHÂN TÍCH GPA")
+            print("="*50)
+            
+            if isinstance(result, PhanTichKetQua):
+                print(f"GPA hiện tại: {result.gpa_hien_tai:.2f}")
+                print(f"Tổng tín chỉ đã học: {result.tong_tin_chi_da_hoc}")
+                print(f"Mục tiêu GPA: {target_gpa:.2f}")
+                print(f"\nNhận xét: {result.nhan_xet_tong_quan}")
+                print(f"\nDự báo: {result.du_bao_ket_qua}")
+            else:
+                print("Phân tích đã hoàn thành. Vui lòng kiểm tra kết quả.")
         
     except KeyboardInterrupt:
         print("\nChương trình đã bị dừng bởi người dùng")

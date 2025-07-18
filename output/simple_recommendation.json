@@ -1,0 +1,57 @@
+{
+  "current_status": {
+    "gpa": 2.7,
+    "completed_credits": 101,
+    "remaining_credits": 0,
+    "completion_rate": 70.13888888888889
+  },
+  "target_gpa": 3.6,
+  "gpa_gap": 0.8999999999999999,
+  "improvement_recommendations": {
+    "courses_to_retake": [
+      {
+        "ma_mon": "EE2009",
+        "ten_mon": "Hệ thống Máy tính và Ngôn ngữ Lập trình",
+        "diem_so": 4.3,
+        "tin_chi": 3,
+        "priority": 5.1000000000000005
+      },
+      {
+        "ma_mon": "MT1005",
+        "ten_mon": "Giải tích 2",
+        "diem_so": 5.1,
+        "tin_chi": 4,
+        "priority": 3.6000000000000014
+      },
+      {
+        "ma_mon": "EE2039",
+        "ten_mon": "Vi xử lý",
+        "diem_so": 5.3,
+        "tin_chi": 3,
+        "priority": 2.1000000000000005
+      },
+      {
+        "ma_mon": "MT1009",
+        "ten_mon": "Phương pháp tính",
+        "diem_so": 5.6,
+        "tin_chi": 3,
+        "priority": 1.200000000000001
+      }
+    ],
+    "estimated_impact": "Cải thiện 5 môn điểm thấp nhất có thể tăng GPA lên khoảng 0.3-0.5 điểm"
+  },
+  "remaining_courses_summary": {
+    "Đại cương": 0,
+    "Cơ sở": 0,
+    "Chuyên ngành": 0,
+    "Tự chọn": 0,
+    "Luận văn/Đồ án": 0
+  },
+  "graduation_timeline": "Khoảng 1 học kỳ",
+  "key_recommendations": [
+    "Ưu tiên học lại các môn có điểm thấp và tín chỉ cao",
+    "Hoàn thành các môn bắt buộc theo đúng thứ tự tiên quyết",
+    "Tập trung vào các môn chuyên ngành trong những học kỳ cuối",
+    "Cần cải thiện GPA thêm 0.9 điểm để đạt mục tiêu"
+  ]
+}
