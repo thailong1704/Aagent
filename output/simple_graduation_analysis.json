@@ -1,0 +1,159 @@
+{
+  "chuong_trinh_dao_tao": {
+    "ten_chuong_trinh": "Kỹ thuật Điện tử - Viễn thông",
+    "ma_chuong_trinh": "D520207",
+    "he_dao_tao": "Đại học",
+    "tong_tin_chi": 144,
+    "cac_mon_hoc": [
+      {
+        "ma_mon": "MT1003",
+        "ten_mon": "Giải tích 1",
+        "tin_chi": 4,
+        "loai_mon": "Đại cương",
+        "hoc_ky_de_xuat": 1,
+        "mon_tien_quyet": [],
+        "mon_hoc_truoc": [],
+        "mo_ta": "Môn học cơ bản về giải tích",
+        "ghi_chu": null
+      },
+      {
+        "ma_mon": "MT1005",
+        "ten_mon": "Giải tích 2",
+        "tin_chi": 4,
+        "loai_mon": "Đại cương",
+        "hoc_ky_de_xuat": 2,
+        "mon_tien_quyet": [
+          "MT1003"
+        ],
+        "mon_hoc_truoc": [],
+        "mo_ta": "Tiếp theo của Giải tích 1",
+        "ghi_chu": null
+      },
+      {
+        "ma_mon": "MT1007",
+        "ten_mon": "Đại số Tuyến tính",
+        "tin_chi": 3,
+        "loai_mon": "Đại cương",
+        "hoc_ky_de_xuat": 1,
+        "mon_tien_quyet": [],
+        "mon_hoc_truoc": [],
+        "mo_ta": "Môn học về đại số tuyến tính",
+        "ghi_chu": null
+      },
+      {
+        "ma_mon": "PH1003",
+        "ten_mon": "Vật lý 1",
+        "tin_chi": 4,
+        "loai_mon": "Đại cương",
+        "hoc_ky_de_xuat": 1,
+        "mon_tien_quyet": [],
+        "mon_hoc_truoc": [],
+        "mo_ta": "Vật lý đại cương phần 1",
+        "ghi_chu": null
+      },
+      {
+        "ma_mon": "EE1001",
+        "ten_mon": "Nhập môn Về kỹ Thuật",
+        "tin_chi": 3,
+        "loai_mon": "Cơ sở",
+        "hoc_ky_de_xuat": 1,
+        "mon_tien_quyet": [],
+        "mon_hoc_truoc": [],
+        "mo_ta": "Giới thiệu về kỹ thuật",
+        "ghi_chu": null
+      },
+      {
+        "ma_mon": "EE2009",
+        "ten_mon": "Hệ thống Máy tính và Ngôn ngữ Lập trình",
+        "tin_chi": 3,
+        "loai_mon": "Cơ sở",
+        "hoc_ky_de_xuat": 2,
+        "mon_tien_quyet": [
+          "EE1001"
+        ],
+        "mon_hoc_truoc": [],
+        "mo_ta": "Lập trình và hệ thống máy tính",
+        "ghi_chu": null
+      },
+      {
+        "ma_mon": "EE2033",
+        "ten_mon": "Giải tích mạch",
+        "tin_chi": 3,
+        "loai_mon": "Cơ sở",
+        "hoc_ky_de_xuat": 3,
+        "mon_tien_quyet": [
+          "MT1003",
+          "PH1003"
+        ],
+        "mon_hoc_truoc": [],
+        "mo_ta": "Phân tích mạch điện",
+        "ghi_chu": null
+      },
+      {
+        "ma_mon": "EE3003",
+        "ten_mon": "Thiết kế Hệ thống Nhúng",
+        "tin_chi": 3,
+        "loai_mon": "Chuyên ngành",
+        "hoc_ky_de_xuat": 6,
+        "mon_tien_quyet": [
+          "EE2009"
+        ],
+        "mon_hoc_truoc": [],
+        "mo_ta": "Thiết kế hệ thống nhúng",
+        "ghi_chu": null
+      }
+    ],
+    "yeu_cau_tong_quat": {
+      "gpa_tot_nghiep": 2.0,
+      "dieu_kien_dac_biet": [
+        "Hoàn thành đủ 144 tín chỉ",
+        "GPA >= 2.0",
+        "Hoàn thành luận văn tốt nghiệp"
+      ]
+    }
+  },
+  "mon_da_hoc": [
+    "EE1001",
+    "MT1003",
+    "MT1007",
+    "PH1003",
+    "PH1007",
+    "CH1003",
+    "EE1007",
+    "MT1005",
+    "MT1009",
+    "EE1009",
+    "EE2009",
+    "EE2033",
+    "IM1021",
+    "SP1007",
+    "SP1031",
+    "EE2003",
+    "EE2005",
+    "EE2035",
+    "EE2039",
+    "EN1003",
+    "MT2013",
+    "SP1033",
+    "SP1035",
+    "EE2015",
+    "EE2023",
+    "EE2025",
+    "EE3003",
+    "EE3015",
+    "IM1023",
+    "SP1039",
+    "EE3011",
+    "EE3019",
+    "EE3021",
+    "EE3031",
+    "EE3165",
+    "EE3183",
+    "SP1037"
+  ],
+  "mon_con_lai": [],
+  "tin_chi_da_hoan_thanh": 101,
+  "tin_chi_con_lai": 0,
+  "ty_le_hoan_thanh": 70.13888888888889,
+  "du_kien_tot_nghiep": "Khoảng 1 học kỳ"
+}
