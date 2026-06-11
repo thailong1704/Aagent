@@ -17,6 +17,9 @@ from agno.models.ollama import Ollama
 from agno.knowledge.json import JSONKnowledgeBase
 from agno.tools.reasoning import ReasoningTools
 
+# Database tools import
+from DatabaseTools import DatabaseAccessTool
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -80,6 +83,66 @@ class PhanTichKetQua(BaseModel):
     hoc_phan_uu_tien: List[HocPhanUuTien] = Field(..., description="Danh sách học phần ưu tiên")
     ke_hoach_chi_tiet: KeHoachHocTap = Field(..., description="Kế hoạch học tập chi tiết")
     du_bao_ket_qua: str = Field(..., description="Dự báo khả năng đạt được mục tiêu")
+
+# Initialize database tool instance
+_database_tool_instance = None
+
+def get_database_tool() -> DatabaseAccessTool:
+    """Get or create the database tool instance."""
+    global _database_tool_instance
+    if _database_tool_instance is None:
+        _database_tool_instance = DatabaseAccessTool()
+    return _database_tool_instance
+
+def db_query_student_grades(semester: str = None) -> Dict[str, Any]:
+    """
+    Tool function: Query student grades from database.
+    This tool only accesses the database when explicitly called by the user.
+    
+    Args:
+        semester: Optional semester filter (e.g., "HK1", "HK2")
+    
+    Returns:
+        Student grade information
+    """
+    tool = get_database_tool()
+    return tool.query_student_grades(semester)
+
+def db_query_gpa_history() -> List[Dict[str, Any]]:
+    """
+    Tool function: Query GPA history from database.
+    This tool only accesses the database when explicitly called by the user.
+    
+    Returns:
+        GPA history records
+    """
+    tool = get_database_tool()
+    return tool.query_gpa_history()
+
+def db_query_course_info(course_code: str = None) -> Dict[str, Any]:
+    """
+    Tool function: Query course information from database.
+    This tool only accesses the database when explicitly called by the user.
+    
+    Args:
+        course_code: Optional course code filter
+    
+    Returns:
+        Course information
+    """
+    tool = get_database_tool()
+    return tool.query_course_info(course_code)
+
+def db_query_student_summary() -> Dict[str, Any]:
+    """
+    Tool function: Query student summary from database.
+    This tool only accesses the database when explicitly called by the user.
+    
+    Returns:
+        Student summary information
+    """
+    tool = get_database_tool()
+    return tool.query_student_summary()
 
 class GpaAnalyzer:
     """Class chính để phân tích GPA"""
@@ -259,7 +322,13 @@ class GpaAnalyzer:
                 name="GPA Analysis Expert",
                 role="Chuyên gia phân tích và tư vấn cải thiện GPA",
                 model=Ollama(id="qwen3:8b"),
-                tools=[ReasoningTools(add_instructions=True)],
+                tools=[
+                    ReasoningTools(add_instructions=True),
+                    db_query_student_grades,
+                    db_query_gpa_history,
+                    db_query_course_info,
+                    db_query_student_summary,
+                ],
                 
                 description=dedent("""
                 Bạn là chuyên gia phân tích học tập và tư vấn cải thiện GPA hàng đầu.
@@ -315,7 +384,34 @@ class GpaAnalyzer:
                     - Nếu một môn xuất hiện nhiều lần, chỉ tính điểm cao nhất
                     - Không đề xuất học lại môn đã có điểm >= 7.0 trừ khi có lý do đặc biệt
                     - Xem xét khả năng tài chính và thời gian của sinh viên
-                           
+                            
+                    """),
+                     
+                    dedent("""
+                    CÔNG CỤ TRUY CẬP CƠ SỞ DỮ LIỆU CÓ SẴN:
+                    Nếu người dùng yêu cầu, bạn có thể sử dụng các công cụ sau để truy cập cơ sở dữ liệu:
+                     
+                    1. db_query_student_grades(semester=None):
+                       - Truy vấn điểm số môn học của sinh viên
+                       - Có thể lọc theo học kỳ (ví dụ: "HK1", "HK2")
+                       - Chỉ thực hiện khi người dùng yêu cầu
+                     
+                    2. db_query_gpa_history():
+                       - Truy vấn lịch sử GPA của sinh viên qua các học kỳ
+                       - Hiển thị xu hướng cải thiện hoặc giảm điểm
+                       - Chỉ thực hiện khi người dùng yêu cầu
+                     
+                    3. db_query_course_info(course_code=None):
+                       - Truy vấn thông tin chi tiết về các môn học
+                       - Có thể lọc theo mã môn học
+                       - Chỉ thực hiện khi người dùng yêu cầu
+                     
+                    4. db_query_student_summary():
+                       - Truy vấn tóm tắt thông tin học tập hiện tại
+                       - Bao gồm GPA hiện tại, tổng tín chỉ, số lượng môn học
+                       - Chỉ thực hiện khi người dùng yêu cầu
+                     
+                    MỌI TRUY VẤN CƠ SỞ DỮ LIỆU CHỈ THỰC HIỆN KHI CÓ YÊU CẦU TỪ NGƯỜI DÙNG!
                     """)
                 ],
                 
